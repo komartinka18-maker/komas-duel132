@@ -1,0 +1,210 @@
+-- ============================================================
+-- KOMA'S DUEL v26.0 - THE FINAL MODERN REPLICA
+-- ============================================================
+
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local Main = Instance.new("Frame", ScreenGui)
+local UICorner = Instance.new("UICorner", Main)
+local UIStroke = Instance.new("UIStroke", Main)
+
+-- --- MODERN 22s COLORS ---
+local Theme = {
+    BG = Color3.fromRGB(10, 10, 15),
+    Accent = Color3.fromRGB(140, 60, 255),
+    Secondary = Color3.fromRGB(20, 20, 25),
+    Text = Color3.fromRGB(255, 255, 255),
+    Stroke = Color3.fromRGB(40, 40, 50)
+}
+
+-- --- MAIN SETUP ---
+Main.Name = "22s_V4_Modern"
+Main.Size = UDim2.new(0, 580, 0, 460)
+Main.Position = UDim2.new(0.3, 0, 0.2, 0)
+Main.BackgroundColor3 = Theme.BG
+Main.BackgroundTransparency = 0.1
+Main.BorderSizePixel = 0
+Main.Active = true
+Main.Draggable = true
+
+UIStroke.Thickness = 1.5
+UIStroke.Color = Theme.Stroke
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+UICorner.CornerRadius = UDim.new(0, 12)
+
+-- TITLE
+local T = Instance.new("TextLabel", Main)
+T.Size = UDim2.new(1, 0, 0, 45)
+T.Text = "KOMA'S DUEL | v26.0"
+T.TextColor3 = Theme.Accent
+T.Font = Enum.Font.GothamBold
+T.TextSize = 20
+T.BackgroundTransparency = 1
+
+-- --- CONFIG ---
+local cfg = {
+    speed = 28, speedOn = false,
+    spin = 60, spinOn = false,
+    reach = 40, stealOn = false,
+    stealSpeed = 25,
+    unwalk = false,
+    ragdoll = true, jump = false
+}
+
+-- --- UI LAYOUTS ---
+local function CreateCol(pos)
+    local sf = Instance.new("ScrollingFrame", Main)
+    sf.Size = UDim2.new(0.46, 0, 0.7, 0)
+    sf.Position = pos
+    sf.BackgroundTransparency = 1
+    sf.ScrollBarThickness = 0
+    local l = Instance.new("UIListLayout", sf)
+    l.Padding = UDim.new(0, 10)
+    return sf
+end
+
+local Left = CreateCol(UDim2.new(0.02, 0, 0.15, 0))
+local Right = CreateCol(UDim2.new(0.52, 0, 0.15, 0))
+
+-- --- FUNCTIONS (TOGGLES & SLIDERS) ---
+local function AddToggle(parent, name, key, callback)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(1, 0, 0, 40)
+    b.BackgroundColor3 = Theme.Secondary
+    b.Text = "   " .. name .. " [" .. (key or "None") .. "]"
+    b.TextColor3 = Theme.Text
+    b.Font = Enum.Font.Gotham
+    b.TextXAlignment = Enum.TextXAlignment.Left
+    Instance.new("UICorner", b)
+
+    local active = false
+    local function run()
+        active = not active
+        callback(active)
+        b.BackgroundColor3 = active and Theme.Accent or Theme.Secondary
+    end
+    b.MouseButton1Click:Connect(run)
+    if key then game:GetService("UserInputService").InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode[key] then run() end end) end
+end
+
+local function AddSlider(parent, name, min, max, def, callback)
+    local f = Instance.new("Frame", parent)
+    f.Size = UDim2.new(1, 0, 0, 45)
+    f.BackgroundTransparency = 1
+    local l = Instance.new("TextLabel", f)
+    l.Size = UDim2.new(1, 0, 0, 15)
+    l.Text = name .. ": " .. def
+    l.TextColor3 = Color3.fromRGB(180, 180, 180)
+    l.BackgroundTransparency = 1
+    local s = Instance.new("TextButton", f)
+    s.Size = UDim2.new(1, 0, 0, 4)
+    s.Position = UDim2.new(0, 0, 0.7, 0)
+    s.BackgroundColor3 = Theme.Accent
+    s.Text = ""
+    s.MouseButton1Click:Connect(function()
+        local m = game.Players.LocalPlayer:GetMouse()
+        local p = math.clamp((m.X - s.AbsolutePosition.X) / s.AbsoluteSize.X, 0, 1)
+        local v = math.floor(min + (max - min) * p)
+        l.Text = name .. ": " .. v
+        callback(v)
+    end)
+end
+
+-- --- BOTTOM BAR (AS IN VIDEO) ---
+local BottomBar = Instance.new("Frame", Main)
+BottomBar.Size = UDim2.new(0.96, 0, 0, 50)
+BottomBar.Position = UDim2.new(0.02, 0, 0.86, 0)
+BottomBar.BackgroundColor3 = Theme.Secondary
+Instance.new("UICorner", BottomBar)
+
+local StealLabel = Instance.new("TextLabel", BottomBar)
+StealLabel.Size = UDim2.new(0.4, 0, 1, 0)
+StealLabel.Text = "STEAL WHILE HOLD"
+StealLabel.TextColor3 = Theme.Text
+StealLabel.Font = Enum.Font.GothamBold
+StealLabel.BackgroundTransparency = 1
+
+local StealSlider = Instance.new("TextButton", BottomBar)
+StealSlider.Size = UDim2.new(0.5, 0, 0, 6)
+StealSlider.Position = UDim2.new(0.45, 0, 0.45, 0)
+StealSlider.BackgroundColor3 = Theme.Accent
+StealSlider.Text = ""
+
+StealSlider.MouseButton1Click:Connect(function()
+    local m = game.Players.LocalPlayer:GetMouse()
+    local p = math.clamp((m.X - StealSlider.AbsolutePosition.X) / StealSlider.AbsoluteSize.X, 0, 1)
+    cfg.stealSpeed = math.floor(1 + 29 * p)
+    StealLabel.Text = "HOLD SPEED: " .. cfg.stealSpeed
+end)
+
+-- --- FILLING COLUMNS ---
+AddToggle(Left, "Speed Boost", "V", function(v) cfg.speedOn = v end)
+AddSlider(Left, "Walk Power", 1, 100, 28, function(v) cfg.speed = v end)
+AddToggle(Left, "Ultra Spinbot", "N", function(v) cfg.spinOn = v end)
+AddSlider(Left, "Spin Power", 1, 300, 60, function(v) cfg.spin = v end)
+
+AddToggle(Right, "Auto Steal", "X", function(v) cfg.stealOn = v end)
+AddSlider(Right, "Steal Reach", 1, 100, 40, function(v) cfg.reach = v end)
+AddToggle(Right, "Unwalk (Stop)", "U", function(v) cfg.unwalk = v end)
+AddToggle(Right, "Infinite Jump", "Z", function(v) cfg.jump = v end)
+
+-- --- CORE ENGINE (FIXED SPIN) ---
+game:GetService("RunService").Heartbeat:Connect(function()
+    local char = game.Players.LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChild("Humanoid")
+    
+    if root and hum then
+        -- UNWALK
+        if cfg.unwalk then
+            hum.WalkSpeed = 0
+            hum.JumpPower = 0
+        else
+            hum.WalkSpeed = 16
+            hum.JumpPower = 50
+        end
+
+        -- SPEED & STEAL SPEED
+        if hum.MoveDirection.Magnitude > 0 then
+            local targetSpeed = cfg.speedOn and cfg.speed or 0
+            if cfg.stealOn then targetSpeed = cfg.stealSpeed end
+            
+            if targetSpeed > 0 then
+                root.Velocity = Vector3.new(hum.MoveDirection.X * targetSpeed, root.Velocity.Y, hum.MoveDirection.Z * targetSpeed)
+            end
+        end
+
+        -- FIXED SPINBOT (No rotation resistance)
+        if cfg.spinOn then
+            hum.AutoRotate = false
+            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(cfg.spin), 0)
+        else
+            hum.AutoRotate = true
+        end
+
+        -- STABILIZER (Anti-Reset)
+        root.Velocity = Vector3.new(root.Velocity.X, math.clamp(root.Velocity.Y, -35, 35), root.Velocity.Z)
+    end
+end)
+
+-- --- INSTANT STEAL ---
+task.spawn(function()
+    while true do
+        if cfg.stealOn then
+            pcall(function()
+                for _, v in pairs(workspace:GetChildren()) do
+                    local cd = v:FindFirstChildOfClass("ClickDetector") or (v:FindFirstChild("Handle") and v.Handle:FindFirstChildOfClass("ClickDetector"))
+                    if cd then
+                        local mag = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - (v:IsA("Model") and v:GetModelCFrame().Position or v.Position)).Magnitude
+                        if mag < cfg.reach then fireclickdetector(cd) end
+                    end
+                end
+            end)
+        end
+        task.wait()
+    end
+end)
+
+-- INF JUMP
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if cfg.jump then game.Players.LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0, 38, 0) end
+end)
